@@ -101,7 +101,7 @@ form {
   <li class="list-group-item">Latitude:<span th:text="${ap.latitude}"></span>&nbsp Longitude:<span th:text="${ap.longitude}"></span></li>
 </ul>
 </div>
-<div class="col-md-6">
+<div class="col-md-6" th:if="${not #lists.isEmpty(carrier)}">
 	Carriers:
 	<ul class="list-group" th:each="ca: ${carrier}">
   		<li class="list-group-item"><span th:text="${ca.name}"></span></li>

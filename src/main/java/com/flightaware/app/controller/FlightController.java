@@ -145,6 +145,9 @@ public class FlightController {
 		modelAndView.addObject("msg", "Flight details");
 		modelAndView.addObject("userip", userip);
 		modelAndView.addObject("flights",flightDetails);
+		if(flightDetails.isEmpty()) {
+			modelAndView.addObject("noFlight","Sorry, No direct flights available.");
+		}
 		modelAndView.setViewName("flights");
 		return modelAndView;
 	}
