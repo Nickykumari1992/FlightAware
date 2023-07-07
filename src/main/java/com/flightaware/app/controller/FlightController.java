@@ -1,33 +1,31 @@
 package com.flightaware.app.controller;
 
 import java.io.IOException;
-import java.sql.Date;
-import java.text.DateFormat;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Spliterators;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.ModelAndView;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.flightaware.app.model.AirportResponse;
+import com.flightaware.app.model.Airports;
+import com.flightaware.app.model.FlightDetails;
 import com.flightaware.app.model.User;
 import com.flightaware.app.model.UserIp;
 import com.flightaware.app.repository.FlightRepo;
 import com.flightaware.app.repository.userRepo;
+import com.flightaware.app.service.ServiceResponseDeserialize;
 
 @Controller
 public class FlightController {
@@ -114,14 +112,14 @@ public class FlightController {
 		return modelAndView;
 	}
 
-	@GetMapping("/fprice")
-	public ModelAndView fpriceGet(ModelAndView modelAndView, UserIp userip) {
+	@GetMapping("/flights")
+	public ModelAndView flightsGet(ModelAndView modelAndView, UserIp userip) {
 		modelAndView.addObject("userip", userip);
-		modelAndView.setViewName("fprice");
+		modelAndView.setViewName("flights");
 		return modelAndView;
 	}
 
-	@PostMapping(value = "/fprice")
+	@PostMapping(value = "/flights")
 	public ModelAndView dispform(ModelAndView modelAndView, UserIp userip)
 			throws InterruptedException, IOException, ParseException {
 		String locale, src, dest, dte;
@@ -139,36 +137,32 @@ public class FlightController {
 		destc = cc.codes(dest);
 		System.out.println(src + " " + dest);
 		System.out.println(srcc + " " + destc);
-		String str = ap.fprices(locale, src, dest, dte);
-		System.out.println("data is" + locale + " " + srcc + " " + destc + " " + dte + " ");
-		ObjectMapper mapper = new ObjectMapper();
-		Map<String, Object> restMap = mapper.readValue(str, Map.class);
-		System.out.println(restMap.toString());
-		ArrayList<String> qlist = (ArrayList<String>) restMap.get("Quotes");
-		ArrayList<String> plist = (ArrayList<String>) restMap.get("Places");
-		ArrayList<String> clist = (ArrayList<String>) restMap.get("Carriers");
-		ArrayList<String> crlist = (ArrayList<String>) restMap.get("Currencies");
-		Iterator qit = qlist.iterator();
-		Iterable<Object> qarray = (Iterable<Object>) StreamSupport
-				.stream(Spliterators.spliteratorUnknownSize(qit, 0), false).collect(Collectors.toList());
-		Iterator pit = plist.iterator();
-		Iterable<Object> parray = (Iterable<Object>) StreamSupport
-				.stream(Spliterators.spliteratorUnknownSize(pit, 0), false).collect(Collectors.toList());
-		Iterator cit = clist.iterator();
-		Iterable<Object> carray = (Iterable<Object>) StreamSupport
-				.stream(Spliterators.spliteratorUnknownSize(cit, 0), false).collect(Collectors.toList());
-		Iterator crit = crlist.iterator();
-		Iterable<Object> crarray = (Iterable<Object>) StreamSupport
-				.stream(Spliterators.spliteratorUnknownSize(crit, 0), false).collect(Collectors.toList());
-
-		System.out.println("qaeear is " + qarray);
-		modelAndView.addObject("msg", "flight details");
-		modelAndView.addObject("qarray", qarray);
-		modelAndView.addObject("parray", parray);
-		modelAndView.addObject("carray", carray);
-		modelAndView.addObject("crarray", crarray);
+		String str = ap.getFlights(locale, src, dest, dte);
+		
+		List<FlightDetails> flightDetails =ServiceResponseDeserialize.getFlightInfo(str);
+		flightDetails = ServiceResponseDeserialize.formatList(flightDetails);
+		
+		modelAndView.addObject("msg", "Flight details");
 		modelAndView.addObject("userip", userip);
-		modelAndView.setViewName("fprice");
+		modelAndView.addObject("flights",flightDetails);
+		modelAndView.setViewName("flights");
+		return modelAndView;
+	}
+	
+	@PostMapping(value = "/airport")
+	public ModelAndView getAirportInfo(ModelAndView modelAndView, UserIp userip)
+			throws InterruptedException, IOException, ParseException {
+		String airport =  userip.getOrigin();
+		String aInfo = ap.getAirportInfo(airport);
+		String aAirlineInfo = ap.getAirportAirlines(airport);
+		Airports aps =  ServiceResponseDeserialize.getObjectFromXml(aInfo, Airports.class);
+		
+		aps.setCarrier(((Airports)ServiceResponseDeserialize.getObjectFromXml(aAirlineInfo, Airports.class)).getCarrier());
+		
+		modelAndView.addObject("msg", "Airport details");
+		modelAndView.addObject("userip", userip);
+		modelAndView.addObject("airport",aps);
+		modelAndView.setViewName("route");
 		return modelAndView;
 	}
 
@@ -255,58 +249,17 @@ public class FlightController {
 	@PostMapping(value = "/routes")
 	public ModelAndView route(ModelAndView modelAndView, UserIp userip)
 			throws InterruptedException, IOException, ParseException {
-		String ct, cr, dte2, locale, src, dest, dte;
-		// frepo.save(userip);
-		locale = userip.getLocale();
-		ct = userip.getCountry();
-		cr = userip.getCurrency();
-		src = userip.getOrigin();
-		dest = userip.getDest();
-		dte = userip.getOutDate();
-		String srcc, destc;
-		srcc = cc.codes(src);
-		destc = cc.codes(dest);
-		System.out.println(src + " " + dest);
-		System.out.println(srcc + " " + destc);
-		// Date date1=(Date) new SimpleDateFormat("yyyy-mm-dd").parse(dte);
-		// DateFormat sdf = new SimpleDateFormat();
-		// java.util.Date out = sdf.parse(dte);
-		// System.out.println(dte+"\t"+date1);
-		String str = ap.rts(ct, cr, locale, srcc, destc, dte);
-		System.out.println("data is" + locale + " " + srcc + " " + destc + " " + dte + " ");
-		ObjectMapper mapper = new ObjectMapper();
-		Map<String, Object> restMap = mapper.readValue(str, Map.class);
-		System.out.println(restMap.toString());
-		ArrayList<String> qlist = (ArrayList<String>) restMap.get("Quotes");
-		ArrayList<String> plist = (ArrayList<String>) restMap.get("Places");
-		ArrayList<String> clist = (ArrayList<String>) restMap.get("Carriers");
-		ArrayList<String> crlist = (ArrayList<String>) restMap.get("Currencies");
-
-		ArrayList<String> rtlist = (ArrayList<String>) restMap.get("Routes");
-		Iterator qit = qlist.iterator();
-		Iterable<Object> qarray = (Iterable<Object>) StreamSupport
-				.stream(Spliterators.spliteratorUnknownSize(qit, 0), false).collect(Collectors.toList());
-		Iterator pit = plist.iterator();
-		Iterable<Object> parray = (Iterable<Object>) StreamSupport
-				.stream(Spliterators.spliteratorUnknownSize(pit, 0), false).collect(Collectors.toList());
-		Iterator cit = clist.iterator();
-		Iterable<Object> carray = (Iterable<Object>) StreamSupport
-				.stream(Spliterators.spliteratorUnknownSize(cit, 0), false).collect(Collectors.toList());
-		Iterator crit = crlist.iterator();
-		Iterable<Object> crarray = (Iterable<Object>) StreamSupport
-				.stream(Spliterators.spliteratorUnknownSize(crit, 0), false).collect(Collectors.toList());
-		Iterator doit = rtlist.iterator();
-		Iterable<Object> doarray = (Iterable<Object>) StreamSupport
-				.stream(Spliterators.spliteratorUnknownSize(doit, 0), false).collect(Collectors.toList());
-
-		System.out.println("qaeear is " + qarray);
-		modelAndView.addObject("msg", "flight details");
-		modelAndView.addObject("qarray", qarray);
-		modelAndView.addObject("parray", parray);
-		modelAndView.addObject("doarray", doarray);
-		modelAndView.addObject("carray", carray);
-		modelAndView.addObject("crarray", crarray);
+		String airport =  userip.getOrigin();
+		String aInfo = ap.getAirportInfo(airport);
+		String aAirlineInfo = ap.getAirportAirlines(airport);
+		Airports aps =  ((AirportResponse)ServiceResponseDeserialize.getObjectFromXml(aInfo, AirportResponse.class)).getAirports();
+		
+		aps.setCarrier(((AirportResponse)ServiceResponseDeserialize.getObjectFromXml(aAirlineInfo, AirportResponse.class)).getAirports().getCarrier());
+		
+		modelAndView.addObject("msg", "Airport details");
 		modelAndView.addObject("userip", userip);
+		modelAndView.addObject("airport",aps.getAirport());
+		modelAndView.addObject("carrier",aps.getCarrier());
 		modelAndView.setViewName("route");
 		return modelAndView;
 	}

@@ -13,9 +13,6 @@
 
 <script src="http://cdn.jsdelivr.net/webjars/jquery/2.1.4/jquery.min.js"></script>
 
-<link href="../../static/css/spring-core.css"
-	th:href="@{css/spring-core.css}" rel="stylesheet" media="screen" />
-
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <!-- Bootstrap CSS -->
@@ -72,15 +69,15 @@ form {
 			FlightAware
 		</a>
 
-		<li class="nav-item"><a class="btn btn-success " href="/fprice"
-			role="button">Flights</a> <a class=" btn btn-success " href="/routes"
-			role="button">Routes</a> <a class=" btn btn-success " href="/dprice"
-			role="button">Flight Dates</a> <a class=" btn btn-success "
-			href="/uguides" role="button">User Guides</a></li>
+		<li class="nav-item">
+		<a class="btn btn-success " href="/flights" role="button">Flights</a> 
+		<a class=" btn btn-success " href="/routes" role="button">Airports</a>
+		<a class=" btn btn-success " href="/uguides" role="button">Account</a>
+		</li>
 
 	</nav>
 	<div class="container">
-		<form class="form-horizontal" action="#" th:action="@{/fprice}"
+		<form class="form-horizontal" action="#" th:action="@{/flights}"
 			th:object="${userip}" method="post" style="border: solid 1px">
 			<!-- <div class="form-group">
 				<div class="col-xs-8">
@@ -115,39 +112,35 @@ form {
 	</div>
 	<center>
 		<div>
-
-			<h2>
-				<span th:text="@{${msg}}"></span>
-			</h2>
-
-			<div style="padding: 100px;">
+			<div style="padding: 100px;padding-top: 20px">
 				<div class="row">
-					<div class="card text-white bg-secondary mb-3"
-						style="width: 18rem;">
-						<div class="card-header">Flight Details</div>
+					<div class="card text-white bg-secondary mb-3" style="width: 100%;">
+						<div class="card-header"><span th:text="@{${msg}}"></span></div>
 						<table class="table">
 							<thead class="thead-light">
 								<tr>
 									<th>Airline</th>
+									<th>Flight Number</th>
 									<th>Departure Airport</th>
 									<th>Departure Terminal</th>
 									<th>Departure Time</th>
 									<th>Arrival Airport</th>
 									<th>Arrival Terminal</th>
 									<th>Arrival Time</th>
+									<th>Flight Duration</th>
 								</tr>
 							</thead>
 							<tbody>
-								<tr th:each="con: ${qarray}">
-									<td th:text="${con.QuoteId}"></td>
-									<td th:text="${con.MinPrice}"></td>
-									<td th:text="${con.airline}"></td>
-									<td th:text="${con.dAirport}"></td>
-									<td th:text="${con.dTeminal"></td>
-									<td th:text="${con.dTime}"></td>
-									<td th:text="${con.aAirport}"></td>
-									<td th:text="${con.aTeminal"></td>
-									<td th:text="${con.aTime}"></td>
+								<tr th:each="flight: ${flights}">
+									<td th:text="${flight.flightLegDetails.marketingAirline.companyShortName}"></td>
+									<td align="center" th:text="${flight.flightLegDetails.flightNumber}"></td>
+									<td th:text="${flight.flightLegDetails.departureAirport.fLSLocationName}"></td>
+									<td align="center" th:text="${flight.flightLegDetails.departureAirport.terminal}"></td>
+									<td th:text="${flight.flightLegDetails.departureDateTime}"></td>
+									<td th:text="${flight.flightLegDetails.arrivalAirport.fLSLocationName}"></td>
+									<td align="center" th:text="${flight.flightLegDetails.arrivalAirport.terminal}"></td>
+									<td th:text="${flight.flightLegDetails.arrivalDateTime}"></td>
+									<td th:text="${flight.flightLegDetails.journeyDuration}"></td>
 								</tr>
 							</tbody>
 						</table>
