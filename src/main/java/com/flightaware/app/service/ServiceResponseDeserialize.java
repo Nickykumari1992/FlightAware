@@ -3,6 +3,7 @@ package com.flightaware.app.service;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.XML;
 
@@ -39,6 +40,15 @@ public class ServiceResponseDeserialize {
 	public static  <T> T getObjectFromXml(String xml,Class T){
 		try {
             JSONObject xmlJSONObj = XML.toJSONObject(xml);
+            JSONObject airports = ((JSONObject)xmlJSONObj.get("Airports"));
+            if(airports!=null && airports.has("Carrier")) {
+            	Object carrier = ((JSONObject)xmlJSONObj.get("Airports")).get("Carrier");
+            	JSONArray jsonArray = new JSONArray();
+                jsonArray.put(carrier);
+                airports.put("Carrier", jsonArray);
+            	
+            }
+            
             String json = xmlJSONObj.toString();
             ObjectMapper mapper = new ObjectMapper();
     		mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -54,19 +64,19 @@ public class ServiceResponseDeserialize {
 	
 public static  List<FlightDetails> formatList(List<FlightDetails> flightDetails){
 	
-		if(flightDetails!=null)
-			for(FlightDetails flightDetail:flightDetails) {
-				
-				if(flightDetail.getFlightLegDetails()!=null) {
-					if(flightDetail.getFlightLegDetails().getJourneyDuration()!=null)
-						flightDetail.getFlightLegDetails().setJourneyDuration(flightDetail.getFlightLegDetails().getJourneyDuration().replace("PT", ""));
-					if(flightDetail.getFlightLegDetails().getArrivalDateTime()!=null)
-						flightDetail.getFlightLegDetails().setArrivalDateTime(flightDetail.getFlightLegDetails().getArrivalDateTime().replace("T", "/"));
-					if(flightDetail.getFlightLegDetails().getDepartureDateTime()!=null)
-						flightDetail.getFlightLegDetails().setDepartureDateTime(flightDetail.getFlightLegDetails().getDepartureDateTime().replace("T", "/"));
-				
-				}
+	if(flightDetails!=null)
+		for(FlightDetails flightDetail:flightDetails) {
+			
+			if(flightDetail.getFlightLegDetails()!=null) {
+				if(flightDetail.getFlightLegDetails().getJourneyDuration()!=null)
+					flightDetail.getFlightLegDetails().setJourneyDuration(flightDetail.getFlightLegDetails().getJourneyDuration().replace("PT", ""));
+				if(flightDetail.getFlightLegDetails().getArrivalDateTime()!=null)
+					flightDetail.getFlightLegDetails().setArrivalDateTime(flightDetail.getFlightLegDetails().getArrivalDateTime().replace("T", "/"));
+				if(flightDetail.getFlightLegDetails().getDepartureDateTime()!=null)
+					flightDetail.getFlightLegDetails().setDepartureDateTime(flightDetail.getFlightLegDetails().getDepartureDateTime().replace("T", "/"));
+			
 			}
+		}
 		
 		return flightDetails;
 	}
